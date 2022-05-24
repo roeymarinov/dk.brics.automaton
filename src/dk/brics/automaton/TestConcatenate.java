@@ -2,15 +2,16 @@ package dk.brics.automaton;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import static dk.brics.automaton.TestUtils.repeatString;
 
 public class TestConcatenate {
-
-    // Basic Black Box Testing:
 
     @Test
     public void emptyList(){
@@ -24,20 +25,25 @@ public class TestConcatenate {
         Assertions.assertTrue(a.isEmptyString());
     }
 
-    @Test
-    public void orderMatters(){
+    @ParameterizedTest
+    @CsvSource({"(Roey)+,(Ariel)+", "Roey,Ariel"})
+    public void orderMatters(String exp1, String exp2){
         //arrange:
-        Automaton first = BasicAutomata.makeString("First");
-        Automaton second = BasicAutomata.makeString("Second");
+        RegExp regExp1 = new RegExp(exp1);
+        RegExp regExp2 = new RegExp(exp2);
+        Automaton first = regExp1.toAutomaton();
+        Automaton second = regExp2.toAutomaton();
         List<Automaton> list = Arrays.asList(first, second);
+        String firstExample = first.getShortestExample(true);
+        String secondExample = second.getShortestExample(true);
 
         //act:
         Automaton a = BasicOperations.concatenate(list);
 
         //assert:
-        Assertions.assertTrue(a.run("FirstSecond"), "concatenation of the words in the right order is " +
+        Assertions.assertTrue(a.run(firstExample + secondExample), "concatenation of the words in the right order is " +
                 "not in the resulting automaton language");
-        Assertions.assertFalse(a.run("SecondFirst"), "concatenation of the words in the wrong order is" +
+        Assertions.assertFalse(a.run(secondExample + firstExample), "concatenation of the words in the wrong order is" +
                 " in the resulting automaton language");
     }
 
@@ -48,81 +54,89 @@ public class TestConcatenate {
         Automaton second = BasicAutomata.makeString("Second");
         List<Automaton> list = Arrays.asList(first, null, second);
 
+        //act + assert:
+        Assertions.assertThrows(NullPointerException.class, () -> BasicOperations.concatenate(list));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"(Roey)+,(Ariel)+,(Amit)+","not...empty,'',notempty"})
+    public void concatenatesAll(String exp1, String exp2, String exp3){
+        //arrange:
+        RegExp regExp1 = new RegExp(exp1);
+        RegExp regExp2 = new RegExp(exp2);
+        RegExp regExp3 = new RegExp(exp3);
+
+        Automaton first = regExp1.toAutomaton();
+        Automaton second = regExp2.toAutomaton();
+        Automaton third = regExp3.toAutomaton();
+
+        List<Automaton> list = Arrays.asList(first, second, third);
+
+        String firstExample = first.getShortestExample(true);
+        String secondExample = second.getShortestExample(true);
+        String thirdExample = third.getShortestExample(true);
+
         //act:
         Automaton a = BasicOperations.concatenate(list);
 
         //assert:
-        Assertions.assertTrue(a.run("FirstSecond"), "concatenation of the words in the right order is " +
+        Assertions.assertTrue(a.run(firstExample + secondExample + thirdExample), "concatenation of all of the words is " +
                 "not in the resulting automaton language");
+        Assertions.assertFalse(a.run(firstExample + secondExample), "concatenation of only some of the words is" +
+                " in the resulting automaton language");
     }
 
-    @Test
-    public void concatenatesAll(){
+    @ParameterizedTest
+    @CsvSource({"(Roey)+,5"})
+    public void sameAutomaton(String exp, int num_repetitions){
         //arrange:
-        Automaton first = BasicAutomata.makeString("First");
-        Automaton second = BasicAutomata.makeString("Second");
-        Automaton third = BasicAutomata.makeString("Third");
-        Automaton fourth = BasicAutomata.makeString("Fourth");
-        List<Automaton> list = Arrays.asList(first, second, third, fourth);
+        RegExp regExp = new RegExp(exp);
+        Automaton a = regExp.toAutomaton();
+        String example = a.getShortestExample(true);
+
+        List<Automaton> list = new ArrayList<>();
+        for (int i=0; i < num_repetitions; i++){
+            list.add(a);
+        }
 
         //act:
-        Automaton a = BasicOperations.concatenate(list);
+        Automaton a_concat = BasicOperations.concatenate(list);
+        Automaton a_repeat = BasicOperations.repeat(a, num_repetitions, num_repetitions);
 
         //assert:
-        Assertions.assertTrue(a.run("FirstSecondThirdFourth"), "concatenation of all of the words is " +
-                "not in the resulting automaton language");
-        Assertions.assertFalse(a.run("FirstSecond"), "concatenation of only some of the words is" +
-                " in the resulting automaton language");
+        Assertions.assertTrue(a_concat.subsetOf(a_repeat) && a_repeat.subsetOf(a_concat));
     }
 
-    @Test
-    public void sameAutomaton(){
+    @ParameterizedTest
+    @CsvSource({"(Roey)+"})
+    public void oneAutomaton(String exp){
         //arrange:
-        Automaton a1 = BasicAutomata.makeString("a");
-        List<Automaton> list = Arrays.asList(a1, a1, a1, a1, a1);
-
-        //act:
-        Automaton a2 = BasicOperations.concatenate(list);
-
-        //assert:
-        Assertions.assertTrue(a2.run("aaaaa"), "concatenation of exactly the number of repetitions is " +
-                "not in the resulting automaton language");
-        Assertions.assertFalse(a2.run("aaaa"), "concatenation of less than the number of repetitions is" +
-                " in the resulting automaton language");
-        Assertions.assertFalse(a2.run("aaaaaa"), "concatenation of more than the number of repetitions is" +
-                " in the resulting automaton language");
-    }
-
-    @Test
-    public void oneAutomaton(){
-        //arrange:
-        Automaton a1 = BasicAutomata.makeString("a");
+        RegExp regExp = new RegExp(exp);
+        Automaton a1 = regExp.toAutomaton();
         List<Automaton> list = Collections.singletonList(a1);
 
         //act:
         Automaton a2 = BasicOperations.concatenate(list);
 
         //assert:
-        Assertions.assertEquals(SpecialOperations.getFiniteStrings(a1), SpecialOperations.getFiniteStrings(a2));
+        Assertions.assertTrue(a1.subsetOf(a2) && a2.subsetOf(a1));
     }
 
-    // Metamorphic Testing:
-    @Test
-    public void orderMatterss(){
+    @ParameterizedTest
+    @CsvSource({"(Roey)+,(Ariel)+"})
+    public void emptyLanguage(String exp1, String exp2){
         //arrange:
-        Automaton first = BasicAutomata.makeString("First");
-        Automaton second = BasicAutomata.makeString("Second");
-        List<Automaton> list = Arrays.asList(first, second);
+        RegExp regExp1 = new RegExp(exp1);
+        RegExp regExp2 = new RegExp(exp2);
+        Automaton a1 = regExp1.toAutomaton();
+        Automaton a2 = regExp2.toAutomaton();
+        Automaton empty = BasicAutomata.makeEmpty();
+        List<Automaton> list = Arrays.asList(a1, a2, empty);
 
         //act:
         Automaton a = BasicOperations.concatenate(list);
 
         //assert:
-        Assertions.assertTrue(a.run("FirstSecond"), "concatenation of the words in the right order is " +
-                "not in the resulting automaton language");
-        Assertions.assertFalse(a.run("SecondFirst"), "concatenation of the words in the wrong order is" +
-                " in the resulting automaton language");
+        Assertions.assertTrue(a.isEmpty());
     }
-
-    // White Box Testing:
 }

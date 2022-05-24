@@ -11,23 +11,21 @@ import static dk.brics.automaton.TestUtils.repeatString;
 
 public class TestRepeat {
 
-    // Basic Black Box Testing:
-
 
     @ParameterizedTest
-    @CsvSource({"2,3"})
-    public void coversEntireRange(int min, int max) {
+    @CsvSource({"R....y,2,6"})
+    public void coversEntireRange(String exp, int min, int max) {
         //arrange:
-        String str = "Argh";
         int randomBetween = ThreadLocalRandom.current().nextInt(min, max + 1);
-
-        Automaton a = BasicAutomata.makeString(str);
-        String longest = repeatString(str, max);
-        String shortest = repeatString(str, min);
-        String between = repeatString(str, randomBetween);
+        RegExp regExp = new RegExp(exp);
+        Automaton a = regExp.toAutomaton();
+        String example = a.getShortestExample(true);
+        String longest = repeatString(example, max);
+        String shortest = repeatString(example, min);
+        String between = repeatString(example, randomBetween);
 
         //act:
-        Automaton a_repeat = a.repeat(min, max);
+        Automaton a_repeat = BasicOperations.repeat(a, min, max);
 
         //assert:
         Assertions.assertTrue(a_repeat.run(longest), "longest string is not accepted");
@@ -36,29 +34,64 @@ public class TestRepeat {
     }
 
     @ParameterizedTest
-    @CsvSource({"2,3"})
-    public void notGoingOutOfRange(int min, int max) {
+    @CsvSource({"R....y,2,6"})
+    public void notGoingOutOfRange(String exp, int min, int max) {
         //arrange:
-        String str = "Argh";
+        RegExp regExp = new RegExp(exp);
+        Automaton a = regExp.toAutomaton();
+        String example = a.getShortestExample(true);
 
-        Automaton a = BasicAutomata.makeString(str);
-        String tooLong = repeatString(str, max + 1);
-        String tooShort = repeatString(str, min - 1);
+        String tooLong = repeatString(example, max + 1);
+        String tooShort = repeatString(example, min - 1);
 
         //act:
-        Automaton a_repeat = a.repeat(min, max);
+        Automaton a_repeat = BasicOperations.repeat(a, min, max);
 
         //assert:
         Assertions.assertFalse(a_repeat.run(tooLong), "too long string is accepted");
         Assertions.assertFalse(a_repeat.run(tooShort), "too short string is accepted");
     }
 
+    @ParameterizedTest
+    @CsvSource({"R....y,6,2"})
+    public void minGreaterThanMax(String exp, int min, int max) {
+        //arrange:
+        RegExp regExp = new RegExp(exp);
+        Automaton a = regExp.toAutomaton();
 
+        //act:
+        Automaton a_repeat = BasicOperations.repeat(a, min, max);
 
-    // Metamorphic Testing:
+        //assert:
+        Assertions.assertTrue(a_repeat.isEmpty());
+    }
 
+    @ParameterizedTest
+    @CsvSource({"R....y,2"})
+    public void minEqualsZero(String exp, int max) {
+        //arrange:
+        RegExp regExp = new RegExp(exp);
+        Automaton a = regExp.toAutomaton();
 
-    // White Box Testing:
+        //act:
+        Automaton a_repeat = BasicOperations.repeat(a, 0, max);
 
+        //assert:
+        Assertions.assertTrue(a_repeat.run(""));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"R....y","''"})
+    public void emptyString(String exp) {
+        //arrange:
+        RegExp regExp = new RegExp(exp);
+        Automaton a = regExp.toAutomaton();
+
+        //act:
+        Automaton a_repeat = BasicOperations.repeat(a,0, 0);
+
+        //assert:
+        Assertions.assertTrue(a_repeat.isEmptyString());
+    }
 
 }

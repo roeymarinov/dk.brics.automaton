@@ -12,49 +12,54 @@ import static dk.brics.automaton.TestUtils.repeatString;
 
 public class TestGetShortestExample {
 
-    // Basic Black Box Testing:
 
-
-    @Test
-    public void emptyStringAccepted() {
+    @ParameterizedTest
+    @CsvSource({"R....y|()", "()"})
+    public void emptyStringAccepted(String exp) {
         //arrange:
-        Automaton a1 = BasicAutomata.makeString("aaa");
-        Automaton a2 = BasicAutomata.makeString("");
-        Automaton a = BasicOperations.union(a1, a2);
+        RegExp regExp = new RegExp(exp);
+        Automaton a = regExp.toAutomaton();
 
         //act:
-        String empty = a.getShortestExample(true);
+        String empty = BasicOperations.getShortestExample(a, true);
+        String notEmpty = BasicOperations.getShortestExample(a, false);
 
         //assert:
-        Assertions.assertEquals("", empty);
+        Assertions.assertEquals("", empty, "empty string should be the shortest example " +
+                "accepted");
+        Assertions.assertNotEquals("", notEmpty, "empty string shouldn't be the shortest" +
+                " example rejected");
     }
 
-    @Test
-    public void emptyStringRejected() {
+    @ParameterizedTest
+    @CsvSource({"R....y", "Ariel"})
+    public void emptyStringRejected(String exp) {
         //arrange:
-        Automaton a1 = BasicAutomata.makeString("aaa");
-        Automaton a2 = BasicAutomata.makeString("th");
-        Automaton a = BasicOperations.union(a1, a2);
+        RegExp regExp = new RegExp(exp);
+        Automaton a = regExp.toAutomaton();
 
         //act:
-        String empty = a.getShortestExample(false);
+        String empty = BasicOperations.getShortestExample(a, false);
+        String notEmpty = BasicOperations.getShortestExample(a, true);
 
         //assert:
-        Assertions.assertEquals("", empty);
+        Assertions.assertEquals("", empty, "empty string should be the shortest example " +
+                "rejected");
+        Assertions.assertNotEquals("", notEmpty, "empty string shouldn't be the shortest" +
+                " example accepted");
     }
+
 
     @Test
     public void returnsLexicographicallyFirst() {
         //arrange:
-        Automaton a1 = BasicAutomata.makeString("aaa");
-        Automaton a2 = BasicAutomata.makeString("bbb");
-        Automaton a = BasicOperations.union(a1, a2);
+        Automaton a = BasicAutomata.makeCharRange('a', 'z');
 
         //act:
-        String shortestExample = a.getShortestExample(true);
+        String shortestExample = BasicOperations.getShortestExample(a, true);
 
         //assert:
-        Assertions.assertEquals("aaa", shortestExample);
+        Assertions.assertEquals("a", shortestExample);
     }
 
     @Test
@@ -64,26 +69,11 @@ public class TestGetShortestExample {
         Automaton b = BasicAutomata.makeAnyString();
 
         //act:
-        String shortestExample = a.getShortestExample(true);
-        String shortestExample2 = b.getShortestExample(false);
-
+        String shortestExample = BasicOperations.getShortestExample(a, true);
+        String shortestExample2 = BasicOperations.getShortestExample(b, false);
 
         //assert:
         Assertions.assertNull(shortestExample, "found an accepted example in an empty automaton");
         Assertions.assertNull(shortestExample2, "found a rejected example in an any string automaton");
-
     }
-
-
-
-
-
-
-
-    // Metamorphic Testing:
-
-
-    // White Box Testing:
-
-
 }

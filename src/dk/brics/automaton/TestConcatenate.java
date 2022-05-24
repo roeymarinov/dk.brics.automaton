@@ -87,13 +87,11 @@ public class TestConcatenate {
     }
 
     @ParameterizedTest
-    @CsvSource({"(Roey)+,5"})
+    @CsvSource({"(Roey)+,5","(Roey)+,1"})
     public void sameAutomaton(String exp, int num_repetitions){
         //arrange:
         RegExp regExp = new RegExp(exp);
         Automaton a = regExp.toAutomaton();
-        String example = a.getShortestExample(true);
-
         List<Automaton> list = new ArrayList<>();
         for (int i=0; i < num_repetitions; i++){
             list.add(a);
@@ -105,21 +103,6 @@ public class TestConcatenate {
 
         //assert:
         Assertions.assertTrue(a_concat.subsetOf(a_repeat) && a_repeat.subsetOf(a_concat));
-    }
-
-    @ParameterizedTest
-    @CsvSource({"(Roey)+"})
-    public void oneAutomaton(String exp){
-        //arrange:
-        RegExp regExp = new RegExp(exp);
-        Automaton a1 = regExp.toAutomaton();
-        List<Automaton> list = Collections.singletonList(a1);
-
-        //act:
-        Automaton a2 = BasicOperations.concatenate(list);
-
-        //assert:
-        Assertions.assertTrue(a1.subsetOf(a2) && a2.subsetOf(a1));
     }
 
     @ParameterizedTest

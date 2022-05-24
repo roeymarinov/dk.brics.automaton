@@ -1,22 +1,7 @@
 package dk.brics.automaton;
 
-import org.junit.jupiter.api.*;
 
-
-public class TestUtils {
-    @Test
-    public void sanityCheck(){
-        //arrange:
-        Automaton a = BasicAutomata.makeString("Roey");
-        Automaton b = BasicAutomata.makeEmpty();
-
-        //act:
-        Automaton c = BasicOperations.intersection(a, b);
-
-        //assert:
-        Assertions.assertTrue(c.isEmpty());
-    }
-
+public class TestBasicOperationsUtils {
     public static String repeatString(String str, int n){
         //empty string buffer
         StringBuilder str_bfr = new StringBuilder();
